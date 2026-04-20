@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -31,6 +32,9 @@ func (h *TaskHandler) Create(w http.ResponseWriter, r *http.Request) {
 		Title:       req.Title,
 		Description: req.Description,
 		Status:      req.Status,
+		Type:        req.Type,
+		Interval:    req.Interval,
+		ScheduleAt:  req.ScheduleAt,
 	})
 	if err != nil {
 		writeUsecaseError(w, err)
@@ -73,6 +77,9 @@ func (h *TaskHandler) Update(w http.ResponseWriter, r *http.Request) {
 		Title:       req.Title,
 		Description: req.Description,
 		Status:      req.Status,
+		Type:        req.Type,
+		Interval:    req.Interval,
+		ScheduleAt:  req.ScheduleAt,
 	})
 	if err != nil {
 		writeUsecaseError(w, err)
@@ -110,6 +117,38 @@ func (h *TaskHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, response)
+}
+
+func (h *TaskHandler) GetByType(w http.ResponseWriter, r *http.Request) {
+	taskType, err := getTypeFromRequest(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	tasks, err := h.usecase.GetByType(r.Context(), taskType)
+	if err != nil {
+		writeUsecaseError(w, err)
+		return
+	}
+	response := make([]taskDTO, 0, len(tasks))
+	for i := range tasks {
+		response = append(response, newTaskDTO(&tasks[i]))
+	}
+	writeJSON(w, http.StatusOK, response)
+}
+
+func getTypeFromRequest(r *http.Request) (taskdomain.Type, error) {
+	rawType := mux.Vars(r)["type"]
+	if rawType == "" {
+		return "", errors.New("missing type")
+	}
+
+	t := taskdomain.Type(rawType)
+	if !t.Valid() {
+		return "", fmt.Errorf("invalid type: %s", rawType)
+	}
+	return t, nil
 }
 
 func getIDFromRequest(r *http.Request) (int64, error) {

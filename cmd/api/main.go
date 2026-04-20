@@ -1,3 +1,8 @@
+// @title Task Service API
+// @version 1.0.0
+// @description CRUD API for tasks built with clean architecture.
+// @host localhost:8080
+// @BasePath /api/v1
 package main
 
 import (

@@ -131,6 +131,34 @@
           "404": { "$ref": "#/components/responses/NotFound" }
         }
       }
+    },
+    "/api/v1/tasks/{type}": {
+      "get": {
+        "tags": ["Tasks"],
+        "summary": "Get task by Type",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Task list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Task" }
+                }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
     }
   },
   "components": {
@@ -155,7 +183,7 @@
     "schemas": {
       "CreateTaskRequest": {
         "type": "object",
-        "required": ["title"],
+        "required": ["title", "type", "schedule_at"],
         "properties": {
           "title": {
             "type": "string",
@@ -169,12 +197,29 @@
             "type": "string",
             "enum": ["new", "in_progress", "done"],
             "example": "new"
+          },
+          "type":
+          {
+            "type" : "string",
+            "enum": ["daily", "monthly", "special_date", "even_odd"],
+            "example": "daily"
+          },
+          "interval" :
+          {
+            "type": "integer",
+            "format": "int64",
+            "example": 2
+          },
+          "schedule_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-03-26T00:00:00Z"
           }
         }
       },
       "UpdateTaskRequest": {
         "type": "object",
-        "required": ["title", "status"],
+        "required": ["title", "status", "type", "schedule_at"],
         "properties": {
           "title": {
             "type": "string",
@@ -188,6 +233,23 @@
             "type": "string",
             "enum": ["new", "in_progress", "done"],
             "example": "in_progress"
+          },
+          "type":
+          {
+            "type" : "string",
+            "enum": ["daily", "monthly", "special_date", "even_odd"],
+            "example": "daily"
+          },
+          "interval" :
+          {
+            "type": "integer",
+            "format": "int64",
+            "example": 2
+          },
+          "schedule_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-03-26T00:00:00Z"
           }
         }
       },
@@ -204,6 +266,23 @@
             "type": "string",
             "enum": ["new", "in_progress", "done"],
             "example": "new"
+          },
+          "type":
+          {
+            "type" : "string",
+            "enum": ["daily", "monthly", "special_date", "even_odd"],
+            "example": "daily"
+          },
+          "interval" :
+          {
+            "type": "integer",
+            "format": "int64",
+            "example": 2
+          },
+          "schedule_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-03-26T00:00:00Z"
           },
           "created_at": {
             "type": "string",

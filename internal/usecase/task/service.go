@@ -31,6 +31,9 @@ func (s *Service) Create(ctx context.Context, input CreateInput) (*taskdomain.Ta
 		Title:       normalized.Title,
 		Description: normalized.Description,
 		Status:      normalized.Status,
+		Type:        normalized.Type,
+		Interval:    normalized.Interval,
+		ScheduleAt:  normalized.ScheduleAt,
 	}
 	now := s.now()
 	model.CreatedAt = now
@@ -67,6 +70,9 @@ func (s *Service) Update(ctx context.Context, id int64, input UpdateInput) (*tas
 		Title:       normalized.Title,
 		Description: normalized.Description,
 		Status:      normalized.Status,
+		Type:        normalized.Type,
+		Interval:    normalized.Interval,
+		ScheduleAt:  normalized.ScheduleAt,
 		UpdatedAt:   s.now(),
 	}
 
@@ -90,6 +96,13 @@ func (s *Service) List(ctx context.Context) ([]taskdomain.Task, error) {
 	return s.repo.List(ctx)
 }
 
+func (s *Service) GetByType(ctx context.Context, t taskdomain.Type) ([]taskdomain.Task, error) {
+	if !t.Valid() {
+		return []taskdomain.Task{}, fmt.Errorf("%w: invalid status", ErrInvalidInput)
+	}
+	return s.repo.GetByType(ctx, t)
+}
+
 func validateCreateInput(input CreateInput) (CreateInput, error) {
 	input.Title = strings.TrimSpace(input.Title)
 	input.Description = strings.TrimSpace(input.Description)
@@ -104,6 +117,18 @@ func validateCreateInput(input CreateInput) (CreateInput, error) {
 
 	if !input.Status.Valid() {
 		return CreateInput{}, fmt.Errorf("%w: invalid status", ErrInvalidInput)
+	}
+
+	if !input.Type.Valid() {
+		return CreateInput{}, fmt.Errorf("%w: invalid interval type", ErrInvalidInput)
+	}
+
+	if !validateTaskInterval(input.Interval, input.Type) {
+		return CreateInput{}, fmt.Errorf("%w: invalid task interval", ErrInvalidInput)
+	}
+
+	if !validateScheduleAt(input.ScheduleAt) {
+		return CreateInput{}, fmt.Errorf("%w: invalid schedule at", ErrInvalidInput)
 	}
 
 	return input, nil
@@ -121,5 +146,53 @@ func validateUpdateInput(input UpdateInput) (UpdateInput, error) {
 		return UpdateInput{}, fmt.Errorf("%w: invalid status", ErrInvalidInput)
 	}
 
+	if !input.Type.Valid() {
+		return UpdateInput{}, fmt.Errorf("%w: invalid interval type", ErrInvalidInput)
+	}
+
+	if !validateTaskInterval(input.Interval, input.Type) {
+		return UpdateInput{}, fmt.Errorf("%w: invalid task interval", ErrInvalidInput)
+	}
+
+	if !validateScheduleAt(input.ScheduleAt) {
+		return UpdateInput{}, fmt.Errorf("%w: invalid schedule at", ErrInvalidInput)
+	}
+
 	return input, nil
+}
+
+func validateTaskInterval(i int64, t taskdomain.Type) bool {
+
+	switch t {
+	case taskdomain.Daily:
+		if i > 0 {
+			return true
+		}
+		return false
+	case taskdomain.Monthly:
+		if i > 0 && i < 31 {
+			return true
+		}
+		return false
+	case taskdomain.SpecialDate:
+		return true
+	case taskdomain.EvenOdd:
+		if i >= 1 && i <= 2 {
+			return true
+		}
+		return false
+	default:
+		return false
+
+	}
+}
+func validateScheduleAt(s time.Time) bool {
+	if s.IsZero() {
+		return false
+	}
+	nowTime := time.Now()
+	if s.Before(nowTime) {
+		return false
+	}
+	return true
 }
